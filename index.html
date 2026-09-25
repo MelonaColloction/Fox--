@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🕵️ Fox Eggs Fraud Detector</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --purple: #a78bfa;
+    --purple-deep: #7c3aed;
+    --pink: #ec4899;
+    --green: #22c55e;
+    --yellow: #fbbf24;
+    --orange: #f97316;
+    --red: #ef4444;
+    --text-dim: rgba(255, 255, 255, 0.55);
+    --text-dimmer: rgba(255, 255, 255, 0.32);
+}
+
+html, body {
+    width: 100%;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    color: #fff;
+    overflow-x: hidden;
+    background: #0a0612;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background:
+        radial-gradient(circle at 15% 15%, rgba(167, 139, 250, 0.18) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(236, 72, 153, 0.15) 0%, transparent 45%),
+        radial-gradient(circle at 50% 50%, #1a0f2e 0%, #0a0612 100%);
+}
+
+/* ============================================================
+   🔐 صفحه قفل بیومتریک
+   ============================================================ */
+#lockScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 30px 24px;
+    background:
+        radial-gradient(circle at 30% 30%, rgba(167, 139, 250, 0.22) 0%, transparent 50%),
+        radial-gradient(circle at 70% 70%, rgba(236, 72, 153, 0.18) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, #1a0f2e 0%, #0a0612 100%);
+    text-align: center;
+    transition: opacity 0.35s ease-out;
+}
+
+#lockScreen.hidden {
+    display: none;
+}
+
+#lockScreen.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.lock-icon {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.2), rgba(236, 72, 153, 0.15));
+    border: 2px solid rgba(167, 139, 250, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 62px;
+    margin-bottom: 26px;
+    position: relative;
+    animation: lockPulse 2.5s ease-in-out infinite;
+    transition: background 0.3s, border-color 0.3s;
+}
+
+.lock-icon::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px solid rgba(167, 139, 250, 0.25);
+    animation: lockRing 2.5s ease-in-out infinite;
+    transition: border-color 0.3s;
+}
+
+@keyframes lockPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes lockRing {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.15); opacity: 0.2; }
+}
+
+.lock-icon.scanning {
+    background: linear-gradient(135deg, rgba(79, 195, 247, 0.25), rgba(59, 130, 246, 0.15));
+    border-color: rgba(79, 195, 247, 0.6);
+}
+
+.lock-icon.scanning::before {
+    border-color: rgba(79, 195, 247, 0.6);
+    animation: scanRing 1s ease-in-out infinite;
+}
+
+.lock-icon.success {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(16, 185, 129, 0.2));
+    border-color: rgba(34, 197, 94, 0.7);
+    animation: successPop 0.5s ease-out;
+}
+
+.lock-icon.success::before {
+    border-color: rgba(34, 197, 94, 0.6);
+}
+
+.lock-icon.error {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(220, 38, 38, 0.2));
+    border-color: rgba(239, 68, 68, 0.7);
+    animation: errorShake 0.5s ease-out;
+}
+
+.lock-icon.error::before {
+    border-color: rgba(239, 68, 68, 0.6);
+    animation: none;
+}
+
+@keyframes scanRing {
+    0%, 100% { transform: scale(1.15); opacity: 0.3; }
+    50% { transform: scale(1.35); opacity: 0.7; }
+}
+
+@keyframes successPop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.18); }
+    100% { transform: scale(1.05); }
+}
+
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0) scale(1); }
+    20% { transform: translateX(-12px) scale(1.02); }
+    40% { transform: translateX(12px) scale(1.02); }
+    60% { transform: translateX(-8px) scale(1.02); }
+    80% { transform: translateX(8px) scale(1.02); }
+}
+
+.lock-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #fff, #c4b5fd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.lock-subtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 34px;
+    max-width: 300px;
+    line-height: 1.6;
+    min-height: 44px;
+}
+
+.btn-unlock {
+    padding: 15px 40px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--purple), var(--purple-deep));
+    color: white;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.4);
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+    margin-bottom: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 240px;
+    justify-content: center;
+}
+
+.btn-unlock:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(124, 58, 237, 0.55);
+}
+
+.btn-unlock:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-unlock:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.btn-unlock.retry {
+    background: linear-gradient(135deg, var(--red), #b91c1c);
+    box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
+}
+
+.lock-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.3);
+    max-width: 280px;
+    line-height: 1.6;
+    margin-top: 8px;
+}
+
+.lock-brand {
+    position: absolute;
+    bottom: 30px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.2);
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ============================================================
+   سوئیچ زبان
+   ============================================================ */
+.lang-switch {
+    position: fixed;
+    top: 20px;
+    z-index: 100;
+    display: flex;
+    gap: 3px;
+    background: rgba(20, 15, 35, 0.9);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.lang-switch button {
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s;
+}
+
+.lang-switch button.active {
+    background: var(--purple-deep);
+    color: #fff;
+}
+
+.lang-switch button:hover:not(.active) {
+    color: #fff;
+}
+
+.page {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 70px 20px 40px;
+}
+
+.form-card {
+    width: 100%;
+    max-width: 500px;
+    background: rgba(20, 15, 35, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 32px 28px 26px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: fadeUp 0.35s ease-out;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.brand {
+    text-align: center;
+    margin-bottom: 26px;
+}
+
+.brand-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    font-size: 36px;
+    margin-bottom: 14px;
+    box-shadow: 0 8px 24px rgba(168, 85, 247, 0.35);
+}
+
+.brand h1 {
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    background: linear-gradient(135deg, #fff, #c4b5fd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.3px;
+}
+
+.brand p {
+    color: var(--text-dim);
+    font-size: 13px;
+}
+
+.fields {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.field-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 6px;
+}
+
+.field-label .hint {
+    color: var(--text-dimmer);
+    font-weight: 400;
+    font-size: 10px;
+}
+
+.input-wrap {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.input-wrap:focus-within {
+    border-color: var(--purple);
+    background: rgba(168, 85, 247, 0.08);
+}
+
+.input-icon {
+    padding: 0 12px;
+    font-size: 17px;
+    opacity: 0.75;
+    flex-shrink: 0;
+}
+
+.input-wrap input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 14px 16px 14px 0;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: inherit;
+    direction: ltr;
+    text-align: left;
+    min-width: 0;
+}
+
+html[dir="ltr"] .input-wrap input {
+    padding: 14px 0 14px 16px;
+}
+
+.input-wrap input::placeholder {
+    color: rgba(255, 255, 255, 0.22);
+    font-weight: 400;
+}
+
+.input-wrap input::-webkit-outer-spin-button,
+.input-wrap input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.input-wrap input[type=number] { -moz-appearance: textfield; }
+
+.btn-analyze {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--purple), var(--purple-deep));
+    color: white;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+    transition: transform 0.15s, box-shadow 0.15s;
+    letter-spacing: 0.3px;
+}
+
+.btn-analyze:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 28px rgba(124, 58, 237, 0.55);
+}
+
+.btn-analyze:active {
+    transform: translateY(0);
+}
+
+.footer-note {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-dimmer);
+    margin-top: 18px;
+    line-height: 1.6;
+}
+
+.result-page {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: #0a0612;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.result-page.active {
+    display: block;
+    animation: pageFade 0.25s ease-out;
+}
+
+@keyframes pageFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.result-inner {
+    min-height: 100vh;
+    padding: 24px 18px 50px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.result-header-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-close {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+}
+
+.btn-close:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.hero {
+    border-radius: 26px;
+    padding: 34px 24px;
+    text-align: center;
+    margin-bottom: 16px;
+    border: 2px solid;
+    animation: heroIn 0.4s ease-out;
+}
+
+@keyframes heroIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.hero.safe {
+    background: linear-gradient(180deg, rgba(34, 197, 94, 0.14), rgba(16, 185, 129, 0.03));
+    border-color: rgba(34, 197, 94, 0.45);
+}
+
+.hero.medium {
+    background: linear-gradient(180deg, rgba(251, 191, 36, 0.14), rgba(245, 158, 11, 0.03));
+    border-color: rgba(251, 191, 36, 0.45);
+}
+
+.hero.danger {
+    background: linear-gradient(180deg, rgba(239, 68, 68, 0.16), rgba(220, 38, 38, 0.03));
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.circle-wrap {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 20px;
+}
+
+.circle-wrap svg {
+    transform: rotate(-90deg);
+}
+
+.circle-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.07);
+    stroke-width: 11;
+}
+
+.circle-progress {
+    fill: none;
+    stroke-width: 11;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s ease-out;
+}
+
+.circle-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+}
+
+.circle-percent {
+    font-size: 48px;
+    font-weight: 900;
+    line-height: 1;
+    display: flex;
+    align-items: flex-start;
+    letter-spacing: -2px;
+}
+
+.circle-percent .sign {
+    font-size: 20px;
+    margin-top: 6px;
+    opacity: 0.6;
+    letter-spacing: 0;
+}
+
+.circle-sub {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.8px;
+    color: var(--text-dim);
+    margin-top: 6px;
+}
+
+.verdict-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    border: 2px solid;
+}
+
+.verdict-badge.safe {
+    background: rgba(34, 197, 94, 0.16);
+    border-color: rgba(34, 197, 94, 0.5);
+    color: #4ade80;
+}
+
+.verdict-badge.medium {
+    background: rgba(251, 191, 36, 0.16);
+    border-color: rgba(251, 191, 36, 0.5);
+    color: #fbbf24;
+}
+
+.verdict-badge.danger {
+    background: rgba(239, 68, 68, 0.16);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #f87171;
+}
+
+.verdict-sub {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+.section {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 12px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+}
+
+.section-title::before {
+    content: '';
+    width: 3px;
+    height: 12px;
+    background: var(--purple);
+    border-radius: 2px;
+}
+
+.risk-bar {
+    height: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 100px;
+    overflow: hidden;
+}
+
+.risk-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 1s ease-out;
+    background: linear-gradient(90deg, var(--green), var(--yellow) 50%, var(--red));
+}
+
+.risk-scale {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 10px;
+    color: var(--text-dimmer);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.stat {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.stat-label {
+    font-size: 10px;
+    color: var(--text-dimmer);
+    font-weight: 600;
+    margin-bottom: 5px;
+    letter-spacing: 0.4px;
+}
+
+.stat-value {
+    font-size: 19px;
+    font-weight: 900;
+    color: white;
+    direction: ltr;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.3px;
+}
+
+.stat-value.accent { color: var(--purple); }
+
+.flags {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.flag {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border-inline-start: 3px solid;
+    animation: flagIn 0.3s ease-out backwards;
+}
+
+@keyframes flagIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.flag.low { border-inline-start-color: var(--yellow); }
+.flag.mid { border-inline-start-color: var(--orange); }
+.flag.high { border-inline-start-color: var(--red); }
+.flag.ok { border-inline-start-color: var(--green); }
+
+.flag-icon {
+    font-size: 18px;
+    line-height: 1.2;
+    flex-shrink: 0;
+}
+
+.flag-body { flex: 1; min-width: 0; }
+
+.flag-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.flag-weight {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-top: 5px;
+    direction: ltr;
+}
+
+.flag.low .flag-weight { color: var(--yellow); background: rgba(251, 191, 36, 0.14); }
+.flag.mid .flag-weight { color: var(--orange); background: rgba(249, 115, 22, 0.14); }
+.flag.high .flag-weight { color: var(--red); background: rgba(239, 68, 68, 0.14); }
+.flag.ok .flag-weight { color: var(--green); background: rgba(34, 197, 94, 0.14); }
+
+.actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: transform 0.15s, background 0.15s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--purple), var(--purple-deep));
+    color: white;
+    box-shadow: 0 6px 18px rgba(124, 58, 237, 0.35);
+}
+
+.btn-primary:hover { transform: translateY(-1px); }
+
+.btn-ghost {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.btn-ghost:hover { background: rgba(255, 255, 255, 0.12); }
+
+.alert-box {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-150%);
+    z-index: 1000;
+    background: #dc2626;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 10px 30px rgba(220, 38, 38, 0.45);
+    transition: transform 0.3s ease-out;
+    max-width: 90%;
+    text-align: center;
+}
+
+.alert-box.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 520px) {
+    .page { padding: 80px 16px 30px; }
+    .form-card { padding: 26px 20px 22px; border-radius: 20px; }
+    .brand-icon { width: 64px; height: 64px; font-size: 32px; }
+    .brand h1 { font-size: 21px; }
+    .result-inner { padding: 20px 14px 40px; }
+    .hero { padding: 28px 20px; border-radius: 22px; }
+    .circle-wrap { width: 160px; height: 160px; }
+    .circle-percent { font-size: 42px; }
+    .circle-percent .sign { font-size: 17px; margin-top: 5px; }
+    .stats { grid-template-columns: 1fr; }
+    .actions { flex-direction: column; }
+    .section { padding: 16px; border-radius: 16px; }
+    .lock-icon { width: 110px; height: 110px; font-size: 52px; }
+    .lock-title { font-size: 20px; }
+    .btn-unlock { min-width: 200px; padding: 14px 30px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     🔐 صفحه قفل بیومتریک
+     ============================================================ -->
+<div id="lockScreen">
+    <div class="lock-icon" id="lockIcon">🔒</div>
+    <h1 class="lock-title" id="lockTitle">احراز هویت</h1>
+    <p class="lock-subtitle" id="lockSubtitle">
+        برای ورود به اپ، هویت خود را تأیید کنید
+    </p>
+
+    <button class="btn-unlock" id="btnUnlock">
+        <span id="unlockIcon">🔓</span>
+        <span id="unlockText">باز کردن با اثر انگشت</span>
+    </button>
+
+    <p class="lock-hint" id="lockHint">
+        از اثر انگشت، چهره یا رمز دستگاه استفاده می‌شود
+    </p>
+
+    <div class="lock-brand">
+        <span>🕵️</span>
+        <span>Fox Eggs Fraud Detector</span>
+    </div>
+</div>
+
+<div class="bg"></div>
+
+<div class="lang-switch" id="langSwitch">
+    <button id="btnFa" class="active">🇮🇷 فارسی</button>
+    <button id="btnEn">🇬🇧 EN</button>
+</div>
+
+<div class="page" id="formPage">
+    <div class="form-card">
+        <div class="brand">
+            <div class="brand-icon">🕵️</div>
+            <h1 id="titleText">سیستم تشخیص تقلب</h1>
+            <p id="subtitleText">Fox Eggs — تحلیل خودکار رکورد بازیکن</p>
+        </div>
+
+        <div class="fields">
+            <div>
+                <div class="field-label">
+                    <span id="labelBest">🏆 رکورد</span>
+                    <span class="hint" id="hintBest">بالاترین امتیاز در یک بازی</span>
+                </div>
+                <div class="input-wrap">
+                    <span class="input-icon">🏆</span>
+                    <input type="number" id="best" placeholder="850" min="0">
+                </div>
+            </div>
+
+            <div>
+                <div class="field-label">
+                    <span id="labelEggs">🥚 تعداد کل تخم‌ها</span>
+                    <span class="hint" id="hintEggs">مجموع همه بازی‌ها</span>
+                </div>
+                <div class="input-wrap">
+                    <span class="input-icon">🥚</span>
+                    <input type="number" id="eggs" placeholder="450" min="0">
+                </div>
+            </div>
+
+            <div>
+                <div class="field-label">
+                    <span id="labelScore">💰 تعداد کل امتیاز</span>
+                    <span class="hint" id="hintScore">مجموع همه بازی‌ها</span>
+                </div>
+                <div class="input-wrap">
+                    <span class="input-icon">💰</span>
+                    <input type="number" id="score" placeholder="8500" min="0">
+                </div>
+            </div>
+
+            <div>
+                <div class="field-label">
+                    <span id="labelGames">🎮 تعداد بازی‌ها</span>
+                </div>
+                <div class="input-wrap">
+                    <span class="input-icon">🎮</span>
+                    <input type="number" id="games" placeholder="15" min="0">
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-analyze" id="analyzeBtn">🔍 تحلیل و بررسی تقلب</button>
+
+        <div class="footer-note" id="footerNote">
+            ⚠️ این ابزار بر اساس منطق بازی Fox Eggs تحلیل تخمینی انجام می‌دهد.
+        </div>
+    </div>
+</div>
+
+<div class="result-page" id="resultPage">
+    <div class="result-inner">
+
+        <div class="result-header">
+            <div class="result-header-title">
+                <span>📊</span>
+                <span id="reportLabel">گزارش تحلیل</span>
+            </div>
+            <button class="btn-close" id="closeBtn">
+                <span id="closeArrow">→</span>
+                <span id="closeText">بازگشت</span>
+            </button>
+        </div>
+
+        <div class="hero" id="hero">
+            <div class="circle-wrap">
+                <svg width="180" height="180" viewBox="0 0 180 180">
+                    <circle class="circle-track" cx="90" cy="90" r="77"></circle>
+                    <circle class="circle-progress" id="circleProgress" cx="90" cy="90" r="77"
+                            stroke-dasharray="483.8" stroke-dashoffset="483.8"></circle>
+                </svg>
+                <div class="circle-label">
+                    <div class="circle-percent">
+                        <span id="percentNum">0</span>
+                        <span class="sign">%</span>
+                    </div>
+                    <div class="circle-sub" id="percentUnit">SUSPICION</div>
+                </div>
+            </div>
+
+            <div class="verdict-badge" id="verdictBadge">
+                <span id="verdictIcon">✅</span>
+                <span id="verdictTitle">امن</span>
+            </div>
+
+            <div class="verdict-sub" id="verdictSub">رکورد کاربر طبیعی به نظر می‌رسد</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title" id="riskTitle">سطح ریسک</div>
+            <div class="risk-bar">
+                <div class="risk-fill" id="riskFill" style="width: 0%"></div>
+            </div>
+            <div class="risk-scale">
+                <span id="scaleSafe">امن</span>
+                <span id="scaleMed">متوسط</span>
+                <span id="scaleDanger">پرخطر</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title" id="statsTitle">آمار تحلیل</div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label" id="statBestLabel">رکورد ثبت‌شده</div>
+                    <div class="stat-value accent" id="statBest">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label" id="statAvgGameLabel">میانگین امتیاز هر بازی</div>
+                    <div class="stat-value" id="statAvgGame">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label" id="statAvgEggLabel">میانگین امتیاز هر تخم</div>
+                    <div class="stat-value" id="statAvgEgg">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label" id="statAvgEggsGameLabel">میانگین تخم هر بازی</div>
+                    <div class="stat-value" id="statAvgEggsGame">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title" id="flagsTitle">نتایج بررسی</div>
+            <div class="flags" id="flagsContent"></div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-ghost" id="btnAgain">
+                <span>🔄</span>
+                <span id="againText">تحلیل جدید</span>
+            </button>
+            <button class="btn btn-primary" id="btnBack">
+                <span>✏️</span>
+                <span id="backText">ویرایش اطلاعات</span>
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<div class="alert-box" id="alertBox"></div>
+
+<script>
+// ============================================================
+// ترجمه‌ها
+// ============================================================
+
+const I18N = {
+    fa: {
+        dir: 'rtl',
+        title: 'سیستم تشخیص تقلب',
+        subtitle: 'Fox Eggs — تحلیل خودکار رکورد بازیکن',
+        labelBest: '🏆 رکورد',
+        hintBest: 'بالاترین امتیاز در یک بازی',
+        labelEggs: '🥚 تعداد کل تخم‌ها',
+        hintEggs: 'مجموع همه بازی‌ها',
+        labelScore: '💰 تعداد کل امتیاز',
+        hintScore: 'مجموع همه بازی‌ها',
+        labelGames: '🎮 تعداد بازی‌ها',
+        analyzeBtn: '🔍 تحلیل و بررسی تقلب',
+        footerNote: '⚠️ این ابزار بر اساس منطق بازی Fox Eggs تحلیل تخمینی انجام می‌دهد.',
+        reportLabel: 'گزارش تحلیل',
+        closeText: 'بازگشت',
+        closeArrow: '→',
+        percentUnit: 'SUSPICION',
+        riskTitle: 'سطح ریسک',
+        scaleSafe: 'امن',
+        scaleMed: 'متوسط',
+        scaleDanger: 'پرخطر',
+        statsTitle: 'آمار تحلیل',
+        statBestLabel: 'رکورد ثبت‌شده',
+        statAvgGameLabel: 'میانگین امتیاز هر بازی',
+        statAvgEggLabel: 'میانگین امتیاز هر تخم',
+        statAvgEggsGameLabel: 'میانگین تخم هر بازی',
+        flagsTitle: 'نتایج بررسی',
+        againText: 'تحلیل جدید',
+        backText: 'ویرایش اطلاعات',
+        verdictSafe: 'امن',
+        verdictSafeSub: 'رکورد کاربر طبیعی به نظر می‌رسد',
+        verdictMedium: 'متوسط',
+        verdictMediumSub: 'برخی فاکتورها نیاز به بررسی بیشتر دارند',
+        verdictDanger: 'پرخطر',
+        verdictDangerSub: 'احتمال تقلب یا خطای ورودی بالا است',
+        alertFillAll: '⚠️ لطفاً همه فیلدها را پر کنید.',
+        alertScoreLessBest: '⚠️ کل امتیاز نمی‌تواند از رکورد کمتر باشد!',
+        alertEggsMismatch: '⚠️ تعداد تخم با رکورد سازگار نیست!',
+        flagBestImpossible2x: (b, m) => `🚨 رکورد (${b}) بیش از ۲ برابر سقف ممکن (${m}) است — تقلب قطعی`,
+        flagBestWayOver: (b, m) => `🚨 رکورد (${b}) به‌شدت فراتر از سقف ممکن (${m}) است`,
+        flagBestOver: (b, m) => `🚨 رکورد (${b}) از سقف ممکن (${m}) عبور کرده — غیرممکن`,
+        flagBestNear: (b) => `⚠️ رکورد (${b}) بسیار نزدیک به سقف غیرممکن است`,
+        flagBestPro: (b) => `💪 رکورد (${b}) در سطح حرفه‌ای است`,
+        flagBestNormal: (b) => `✅ رکورد (${b}) در محدوده طبیعی است`,
+        flagAvgGameOver: (a) => `🚨 میانگین امتیاز هر بازی (${a}) از سقف ممکن عبور کرده`,
+        flagAvgGameHigh: (a) => `⚠️ میانگین امتیاز هر بازی (${a}) بسیار بالاست`,
+        flagAvgEggTooHigh: (a, m) => `🚨 میانگین امتیاز هر تخم (${a}) بیش از حداکثر تئوری (${m})`,
+        flagAvgEggLow: (a) => `⚠️ میانگین امتیاز هر تخم (${a}) بسیار پایین است — احتمال خطای ورودی`,
+        flagEggsPerGameHigh: (a) => `🚨 میانگین تخم در هر بازی (${a}) بسیار بالاست`,
+        flagEggsPerGameMid: (a) => `⚠️ میانگین تخم در هر بازی (${a}) بالاست`,
+        flagAvgGameOverBest: (a, b) => `🚨 میانگین امتیاز بازی (${a}) از رکورد (${b}) بیشتر است — غیرمنطقی`,
+        flagLowGames: '⚠️ با تعداد بازی بسیار کم، امتیاز کل بالایی ثبت شده',
+        flagAllOk: '✅ تمام فاکتورها در محدوده طبیعی هستند',
+        // 🔐 Lock screen
+        lockTitle: 'احراز هویت',
+        lockSubtitle: 'برای ورود به اپ، هویت خود را تأیید کنید',
+        unlockBtn: 'باز کردن با اثر انگشت',
+        unlockIcon: '🔓',
+        lockHint: 'از اثر انگشت، چهره یا رمز دستگاه استفاده می‌شود',
+        scanning: 'در حال اسکن...',
+        scanningIcon: '🔍',
+        success: 'خوش آمدید!',
+        successIcon: '✅',
+        failed: 'احراز هویت ناموفق',
+        failedIcon: '❌',
+        retryBtn: 'تلاش مجدد',
+        retryIcon: '🔄',
+        notSupported: 'بیومتریک در دسترس نیست',
+        notSupportedSub: 'برای امنیت، ابتدا اثر انگشت را در تنظیمات دستگاه فعال کنید',
+        continueBtn: 'ادامه بدون احراز هویت',
+        continueIcon: '➡️',
+        verifyReason: 'تأیید هویت برای ورود به Fox Eggs Fraud Detector',
+        verifyTitle: 'احراز هویت',
+        verifyDesc: 'برای ادامه، هویت خود را تأیید کنید'
+    },
+    en: {
+        dir: 'ltr',
+        title: 'Fraud Detector',
+        subtitle: 'Fox Eggs — Automatic Player Analysis',
+        labelBest: '🏆 Best Score',
+        hintBest: 'Highest score in a game',
+        labelEggs: '🥚 Total Eggs',
+        hintEggs: 'All games combined',
+        labelScore: '💰 Total Score',
+        hintScore: 'All games combined',
+        labelGames: '🎮 Games Played',
+        analyzeBtn: '🔍 Analyze & Detect Fraud',
+        footerNote: '⚠️ This tool performs an estimation based on Fox Eggs game logic.',
+        reportLabel: 'Analysis Report',
+        closeText: 'Back',
+        closeArrow: '←',
+        percentUnit: 'SUSPICION',
+        riskTitle: 'Risk Level',
+        scaleSafe: 'Safe',
+        scaleMed: 'Medium',
+        scaleDanger: 'High',
+        statsTitle: 'Analysis Stats',
+        statBestLabel: 'Registered Best',
+        statAvgGameLabel: 'Avg Score / Game',
+        statAvgEggLabel: 'Avg Score / Egg',
+        statAvgEggsGameLabel: 'Avg Eggs / Game',
+        flagsTitle: 'Analysis Results',
+        againText: 'New Analysis',
+        backText: 'Edit Data',
+        verdictSafe: 'Safe',
+        verdictSafeSub: "Player's record looks natural",
+        verdictMedium: 'Medium',
+        verdictMediumSub: 'Some factors require further review',
+        verdictDanger: 'High Risk',
+        verdictDangerSub: 'High probability of cheating or input error',
+        alertFillAll: '⚠️ Please fill in all fields.',
+        alertScoreLessBest: '⚠️ Total score cannot be less than best score!',
+        alertEggsMismatch: '⚠️ Egg count is incompatible with the best score!',
+        flagBestImpossible2x: (b, m) => `🚨 Best (${b}) is more than 2× the impossible cap (${m}) — definite cheating`,
+        flagBestWayOver: (b, m) => `🚨 Best (${b}) is far beyond the possible cap (${m})`,
+        flagBestOver: (b, m) => `🚨 Best (${b}) exceeds the possible cap (${m}) — impossible`,
+        flagBestNear: (b) => `⚠️ Best (${b}) is extremely close to the impossible cap`,
+        flagBestPro: (b) => `💪 Best (${b}) is at pro level`,
+        flagBestNormal: (b) => `✅ Best (${b}) is within the natural range`,
+        flagAvgGameOver: (a) => `🚨 Avg score per game (${a}) exceeds the possible cap`,
+        flagAvgGameHigh: (a) => `⚠️ Avg score per game (${a}) is very high`,
+        flagAvgEggTooHigh: (a, m) => `🚨 Avg score per egg (${a}) exceeds theoretical maximum (${m})`,
+        flagAvgEggLow: (a) => `⚠️ Avg score per egg (${a}) is too low — possible input error`,
+        flagEggsPerGameHigh: (a) => `🚨 Avg eggs per game (${a}) is extremely high`,
+        flagEggsPerGameMid: (a) => `⚠️ Avg eggs per game (${a}) is high`,
+        flagAvgGameOverBest: (a, b) => `🚨 Avg score per game (${a}) is higher than best score (${b}) — illogical`,
+        flagLowGames: '⚠️ High total score recorded with very few games played',
+        flagAllOk: '✅ All factors are within the natural range',
+        // 🔐 Lock screen
+        lockTitle: 'Authentication',
+        lockSubtitle: 'Verify your identity to enter the app',
+        unlockBtn: 'Unlock with Fingerprint',
+        unlockIcon: '🔓',
+        lockHint: 'Uses fingerprint, face, or device PIN',
+        scanning: 'Scanning...',
+        scanningIcon: '🔍',
+        success: 'Welcome!',
+        successIcon: '✅',
+        failed: 'Authentication failed',
+        failedIcon: '❌',
+        retryBtn: 'Try Again',
+        retryIcon: '🔄',
+        notSupported: 'Biometric unavailable',
+        notSupportedSub: 'For security, please enable fingerprint in your device settings',
+        continueBtn: 'Continue without authentication',
+        continueIcon: '➡️',
+        verifyReason: 'Verify your identity to enter Fox Eggs Fraud Detector',
+        verifyTitle: 'Authentication',
+        verifyDesc: 'Please verify your identity to continue'
+    }
+};
+
+let lang = localStorage.getItem('fox-detector-lang') || 'fa';
+
+// ============================================================
+// ثابت‌ها
+// ============================================================
+
+const AVG_PER_EGG = 4.21;
+const MAX_AVG_PER_EGG = 12.63;
+const MAX_SCORE_PER_GAME = 2000;
+const SOFT_SCORE_LIMIT = 1500;
+const SCORE_PER_GAME_NORMAL = 800;
+const HIGH_EGGS_PER_GAME = 250;
+const MAX_EGGS_PER_GAME = 500;
+
+// ============================================================
+// توابع کمکی
+// ============================================================
+
+function t(key, ...args) {
+    const val = I18N[lang][key];
+    return typeof val === 'function' ? val(...args) : val;
+}
+
+function formatNum(n) {
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M';
+    if (n >= 1_000) return n.toLocaleString('en-US');
+    return n.toFixed(2);
+}
+
+function getInputs() {
+    return {
+        best:  parseInt(document.getElementById('best').value)  || 0,
+        eggs:  parseInt(document.getElementById('eggs').value)  || 0,
+        score: parseInt(document.getElementById('score').value) || 0,
+        games: parseInt(document.getElementById('games').value) || 0
+    };
+}
+
+function showAlert(msg) {
+    const box = document.getElementById('alertBox');
+    box.textContent = msg;
+    box.classList.add('show');
+    clearTimeout(box._timer);
+    box._timer = setTimeout(() => box.classList.remove('show'), 2800);
+}
+
+// ============================================================
+// 🔐 سیستم قفل بیومتریک
+// ============================================================
+
+let NativeBiometric = null;
+
+// بررسی در دسترس بودن پلاگین
+function getBiometricPlugin() {
+    if (window.Capacitor && window.Capacitor.Plugins) {
+        return window.Capacitor.Plugins.NativeBiometric || null;
+    }
+    return null;
+}
+
+// بررسی پشتیبانی دستگاه
+async function checkBiometricAvailability() {
+    const plugin = getBiometricPlugin();
+    if (!plugin) return { isAvailable: false, reason: 'plugin-missing' };
+
+    try {
+        const result = await plugin.isAvailable();
+        return result;
+    } catch (e) {
+        console.warn('Biometric check error:', e);
+        return { isAvailable: false, reason: 'error' };
+    }
+}
+
+// تنظیم وضعیت آیکون
+function setLockState(state) {
+    const icon = document.getElementById('lockIcon');
+    icon.className = 'lock-icon';
+    if (state) icon.classList.add(state);
+}
+
+// تنظیم دکمه
+function setUnlockButton(text, icon, isRetry, disabled) {
+    const btn = document.getElementById('btnUnlock');
+    document.getElementById('unlockText').textContent = text;
+    document.getElementById('unlockIcon').textContent = icon;
+    btn.disabled = !!disabled;
+    btn.classList.toggle('retry', !!isRetry);
+}
+
+// فرآیند احراز هویت
+async function authenticateWithBiometric() {
+    const plugin = getBiometricPlugin();
+
+    // اگه پلاگین نیست (مرورگر عادی) → مستقیم باز کن
+    if (!plugin) {
+        unlockApp();
+        return;
+    }
+
+    // حالت اسکن
+    setLockState('scanning');
+    document.getElementById('lockTitle').textContent = t('scanning');
+    document.getElementById('lockSubtitle').textContent = '';
+    setUnlockButton(t('scanning'), t('scanningIcon'), false, true);
+
+    try {
+        const available = await checkBiometricAvailability();
+
+        if (!available.isAvailable) {
+            // بیومتریک در دسترس نیست → اجازه ورود بدون احراز هویت
+            setLockState('error');
+            document.getElementById('lockTitle').textContent = t('notSupported');
+            document.getElementById('lockSubtitle').textContent = t('notSupportedSub');
+            setUnlockButton(t('continueBtn'), t('continueIcon'), false, false);
+
+            const btn = document.getElementById('btnUnlock');
+            btn.onclick = () => unlockApp();
+            return;
+        }
+
+        // درخواست احراز هویت
+        await plugin.verifyIdentity({
+            reason: t('verifyReason'),
+            title: t('verifyTitle'),
+            subtitle: 'Fox Eggs Fraud Detector',
+            description: t('verifyDesc'),
+            negativeButtonText: t('failed'),
+            maxAttempts: 5,
+            useFallback: true
+        });
+
+        // ✅ موفق
+        setLockState('success');
+        document.getElementById('lockTitle').textContent = t('success');
+        document.getElementById('lockSubtitle').textContent = '';
+        setUnlockButton(t('success'), t('successIcon'), false, true);
+
+        setTimeout(() => {
+            unlockApp();
+        }, 600);
+
+    } catch (error) {
+        // ❌ ناموفق یا انصراف
+        console.warn('Biometric failed:', error);
+
+        setLockState('error');
+        document.getElementById('lockTitle').textContent = t('failed');
+        document.getElementById('lockSubtitle').textContent = '';
+        setUnlockButton(t('retryBtn'), t('retryIcon'), true, false);
+
+        const btn = document.getElementById('btnUnlock');
+        btn.onclick = authenticateWithBiometric;
+    }
+}
+
+// باز کردن اپ
+function unlockApp() {
+    const lock = document.getElementById('lockScreen');
+    lock.classList.add('fade-out');
+    setTimeout(() => {
+        lock.classList.add('hidden');
+    }, 350);
+}
+
+// راه‌اندازی اولیه
+async function initLockScreen() {
+    updateLockText();
+
+    const plugin = getBiometricPlugin();
+
+    // اگه توی مرورگر عادی → مستقیم باز کن
+    if (!plugin) {
+        unlockApp();
+        return;
+    }
+
+    // چک پشتیبانی
+    const available = await checkBiometricAvailability();
+
+    if (available.isAvailable) {
+        // خودکار شروع کن بعد از 300ms
+        setTimeout(() => {
+            authenticateWithBiometric();
+        }, 300);
+    } else {
+        // دکمه رو به "ادامه" تغییر بده
+        document.getElementById('lockSubtitle').textContent = t('notSupportedSub');
+        setUnlockButton(t('continueBtn'), t('continueIcon'), false, false);
+        document.getElementById('btnUnlock').onclick = () => unlockApp();
+    }
+}
+
+// آپدیت متن‌های قفل هنگام تغییر زبان
+function updateLockText() {
+    // فقط اگر صفحه قفل فعاله و در حالت اولیه هست
+    const lock = document.getElementById('lockScreen');
+    if (!lock || lock.classList.contains('hidden')) return;
+
+    const btn = document.getElementById('btnUnlock');
+    if (btn.disabled && btn.textContent.includes('...')) return; // در حال اسکن
+    if (btn.classList.contains('retry')) return; // در حالت retry
+
+    document.getElementById('lockTitle').textContent = t('lockTitle');
+    document.getElementById('lockSubtitle').textContent = t('lockSubtitle');
+    document.getElementById('lockHint').textContent = t('lockHint');
+    document.getElementById('unlockText').textContent = t('unlockBtn');
+    document.getElementById('unlockIcon').textContent = t('unlockIcon');
+}
+
+// دکمه دستی
+document.getElementById('btnUnlock').onclick = authenticateWithBiometric;
+
+// ============================================================
+// اعمال زبان
+// ============================================================
+
+function applyLanguage() {
+    const dict = I18N[lang];
+    document.documentElement.lang = lang;
+    document.documentElement.dir = dict.dir;
+
+    document.getElementById('btnFa').classList.toggle('active', lang === 'fa');
+    document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+
+    const ls = document.getElementById('langSwitch');
+    if (dict.dir === 'rtl') {
+        ls.style.left = '20px';
+        ls.style.right = 'auto';
+    } else {
+        ls.style.right = '20px';
+        ls.style.left = 'auto';
+    }
+
+    document.getElementById('titleText').textContent    = dict.title;
+    document.getElementById('subtitleText').textContent = dict.subtitle;
+    document.getElementById('labelBest').textContent    = dict.labelBest;
+    document.getElementById('hintBest').textContent     = dict.hintBest;
+    document.getElementById('labelEggs').textContent    = dict.labelEggs;
+    document.getElementById('hintEggs').textContent     = dict.hintEggs;
+    document.getElementById('labelScore').textContent   = dict.labelScore;
+    document.getElementById('hintScore').textContent    = dict.hintScore;
+    document.getElementById('labelGames').textContent   = dict.labelGames;
+    document.getElementById('analyzeBtn').textContent   = dict.analyzeBtn;
+    document.getElementById('footerNote').textContent   = dict.footerNote;
+
+    document.getElementById('reportLabel').textContent         = dict.reportLabel;
+    document.getElementById('closeText').textContent           = dict.closeText;
+    document.getElementById('closeArrow').textContent          = dict.closeArrow;
+    document.getElementById('percentUnit').textContent         = dict.percentUnit;
+    document.getElementById('riskTitle').textContent           = dict.riskTitle;
+    document.getElementById('scaleSafe').textContent           = dict.scaleSafe;
+    document.getElementById('scaleMed').textContent            = dict.scaleMed;
+    document.getElementById('scaleDanger').textContent         = dict.scaleDanger;
+    document.getElementById('statsTitle').textContent          = dict.statsTitle;
+    document.getElementById('statBestLabel').textContent       = dict.statBestLabel;
+    document.getElementById('statAvgGameLabel').textContent    = dict.statAvgGameLabel;
+    document.getElementById('statAvgEggLabel').textContent     = dict.statAvgEggLabel;
+    document.getElementById('statAvgEggsGameLabel').textContent= dict.statAvgEggsGameLabel;
+    document.getElementById('flagsTitle').textContent          = dict.flagsTitle;
+    document.getElementById('againText').textContent           = dict.againText;
+    document.getElementById('backText').textContent            = dict.backText;
+
+    // آپدیت صفحه قفل
+    updateLockText();
+
+    // رفرش نتیجه اگه بازه
+    if (document.getElementById('resultPage').classList.contains('active') && window._lastResult) {
+        const r = window._lastResult;
+        renderResult(r.flags, r.stats);
+    }
+}
+
+// ============================================================
+// تحلیل
+// ============================================================
+
+function analyze() {
+    const { best, eggs, score, games } = getInputs();
+
+    if (best <= 0 || eggs <= 0 || score <= 0 || games <= 0) {
+        showAlert(t('alertFillAll'));
+        return;
+    }
+    if (score < best) {
+        showAlert(t('alertScoreLessBest'));
+        return;
+    }
+    if (eggs < best / MAX_AVG_PER_EGG) {
+        showAlert(t('alertEggsMismatch'));
+        return;
+    }
+
+    let suspicion = 0;
+    const flags = [];
+
+    const avgScorePerGame = score / games;
+    const avgEggsPerGame = eggs / games;
+    const avgPerEgg = score / eggs;
+
+    // ۱. رکورد
+    if (best > MAX_SCORE_PER_GAME) {
+        const ratio = best / MAX_SCORE_PER_GAME;
+        let w, lvl, txt;
+        if (ratio >= 2) {
+            w = 100; lvl = 'high';
+            txt = t('flagBestImpossible2x', formatNum(best), MAX_SCORE_PER_GAME);
+        } else if (ratio >= 1.3) {
+            w = 80; lvl = 'high';
+            txt = t('flagBestWayOver', formatNum(best), MAX_SCORE_PER_GAME);
+        } else {
+            w = 55; lvl = 'high';
+            txt = t('flagBestOver', formatNum(best), MAX_SCORE_PER_GAME);
+        }
+        suspicion += w;
+        flags.push({ icon: '🚨', text: txt, weight: w, level: lvl });
+    } else if (best > SOFT_SCORE_LIMIT) {
+        const ratio = (best - SOFT_SCORE_LIMIT) / (MAX_SCORE_PER_GAME - SOFT_SCORE_LIMIT);
+        const w = Math.round(25 + ratio * 20);
+        suspicion += w;
+        flags.push({ icon: '⚠️', text: t('flagBestNear', formatNum(best)), weight: w, level: 'high' });
+    } else if (best > SCORE_PER_GAME_NORMAL) {
+        suspicion += 10;
+        flags.push({ icon: '💪', text: t('flagBestPro', formatNum(best)), weight: 10, level: 'low' });
+    } else {
+        flags.push({ icon: '✅', text: t('flagBestNormal', formatNum(best)), weight: 0, level: 'ok' });
+    }
+
+    // ۲. میانگین امتیاز هر بازی
+    if (avgScorePerGame > MAX_SCORE_PER_GAME) {
+        suspicion += 40;
+        flags.push({ icon: '🚨', text: t('flagAvgGameOver', formatNum(avgScorePerGame)), weight: 40, level: 'high' });
+    } else if (avgScorePerGame > SOFT_SCORE_LIMIT) {
+        suspicion += 18;
+        flags.push({ icon: '⚠️', text: t('flagAvgGameHigh', formatNum(avgScorePerGame)), weight: 18, level: 'mid' });
+    }
+
+    // ۳. نسبت امتیاز به تخم
+    if (avgPerEgg > MAX_AVG_PER_EGG * 1.05) {
+        const ratio = avgPerEgg / MAX_AVG_PER_EGG;
+        let w, lvl;
+        if (ratio > 3) { w = 40; lvl = 'high'; }
+        else if (ratio > 1.8) { w = 30; lvl = 'high'; }
+        else { w = 20; lvl = 'mid'; }
+        suspicion += w;
+        flags.push({ icon: '🚨', text: t('flagAvgEggTooHigh', avgPerEgg.toFixed(2), MAX_AVG_PER_EGG.toFixed(2)), weight: w, level: lvl });
+    }
+
+    if (avgPerEgg < AVG_PER_EGG * 0.5) {
+        suspicion += 15;
+        flags.push({ icon: '⚠️', text: t('flagAvgEggLow', avgPerEgg.toFixed(2)), weight: 15, level: 'mid' });
+    }
+
+    // ۴. تخم در هر بازی
+    if (avgEggsPerGame > MAX_EGGS_PER_GAME) {
+        suspicion += 25;
+        flags.push({ icon: '🚨', text: t('flagEggsPerGameHigh', avgEggsPerGame.toFixed(0)), weight: 25, level: 'high' });
+    } else if (avgEggsPerGame > HIGH_EGGS_PER_GAME) {
+        suspicion += 12;
+        flags.push({ icon: '⚠️', text: t('flagEggsPerGameMid', avgEggsPerGame.toFixed(0)), weight: 12, level: 'low' });
+    }
+
+    // ۵. میانگین > رکورد
+    if (avgScorePerGame > best * 1.05) {
+        suspicion += 20;
+        flags.push({ icon: '🚨', text: t('flagAvgGameOverBest', formatNum(avgScorePerGame), formatNum(best)), weight: 20, level: 'high' });
+    }
+
+    // ۶. بازی کم، امتیاز بالا
+    if (games <= 2 && score > 3000) {
+        suspicion += 15;
+        flags.push({ icon: '⚠️', text: t('flagLowGames'), weight: 15, level: 'mid' });
+    }
+
+    if (flags.length === 0) {
+        flags.push({ icon: '✅', text: t('flagAllOk'), weight: 0, level: 'ok' });
+    }
+
+    suspicion = Math.min(100, Math.round(suspicion));
+
+    const stats = { best, eggs, score, games, avgScorePerGame, avgEggsPerGame, avgPerEgg };
+    window._lastResult = { flags, stats };
+
+    renderResult(flags, stats);
+    openResultPage();
+}
+
+// ============================================================
+// رندر نتیجه
+// ============================================================
+
+function renderResult(flags, stats) {
+    let highCount = 0;
+    let midCount = 0;
+    let weightedSum = 0;
+
+    for (let i = 0; i < flags.length; i++) {
+        const f = flags[i];
+        weightedSum += f.weight || 0;
+        if (f.level === 'high') highCount++;
+        else if (f.level === 'mid') midCount++;
+    }
+
+    let forcedMin = 0;
+    if (highCount >= 2) {
+        forcedMin = 100;
+    } else if (highCount === 1) {
+        forcedMin = Math.max(55, weightedSum);
+    } else if (midCount >= 3) {
+        forcedMin = 65;
+    } else if (midCount === 2) {
+        forcedMin = 45;
+    } else if (midCount === 1) {
+        forcedMin = 30;
+    }
+
+    const finalPercent = Math.min(100, Math.max(weightedSum, forcedMin));
+
+    let cls, icon, title, sub;
+    if (finalPercent < 30) {
+        cls = 'safe'; icon = '✅';
+        title = t('verdictSafe'); sub = t('verdictSafeSub');
+    } else if (finalPercent < 65) {
+        cls = 'medium'; icon = '⚠️';
+        title = t('verdictMedium'); sub = t('verdictMediumSub');
+    } else {
+        cls = 'danger'; icon = '🚨';
+        title = t('verdictDanger'); sub = t('verdictDangerSub');
+    }
+
+    document.getElementById('hero').className = 'hero ' + cls;
+
+    const badge = document.getElementById('verdictBadge');
+    badge.className = 'verdict-badge ' + cls;
+    document.getElementById('verdictIcon').textContent = icon;
+    document.getElementById('verdictTitle').textContent = title;
+    document.getElementById('verdictSub').textContent = sub;
+
+    const circle = document.getElementById('circleProgress');
+    const circumference = 2 * Math.PI * 77;
+    const colorMap = { safe: '#22c55e', medium: '#fbbf24', danger: '#ef4444' };
+    const color = colorMap[cls];
+
+    circle.style.stroke = color;
+    circle.style.strokeDashoffset = circumference;
+
+    const percentNum = document.getElementById('percentNum');
+    percentNum.style.color = color;
+
+    setTimeout(() => {
+        circle.style.strokeDashoffset = circumference - (finalPercent / 100) * circumference;
+
+        let current = 0;
+        const duration = 800;
+        const startTime = performance.now();
+
+        function animateNum(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            current = Math.round(eased * finalPercent);
+            percentNum.textContent = current;
+            if (progress < 1) requestAnimationFrame(animateNum);
+        }
+        requestAnimationFrame(animateNum);
+    }, 50);
+
+    const riskFill = document.getElementById('riskFill');
+    riskFill.style.width = '0%';
+    setTimeout(() => {
+        riskFill.style.width = finalPercent + '%';
+    }, 100);
+
+    document.getElementById('statBest').textContent         = formatNum(stats.best);
+    document.getElementById('statAvgGame').textContent      = formatNum(stats.avgScorePerGame);
+    document.getElementById('statAvgEgg').textContent       = stats.avgPerEgg.toFixed(2);
+    document.getElementById('statAvgEggsGame').textContent  = stats.avgEggsPerGame.toFixed(0);
+
+    const order = { high: 0, mid: 1, low: 2, ok: 3 };
+    flags.sort((a, b) => order[a.level] - order[b.level]);
+
+    const container = document.getElementById('flagsContent');
+    let html = '';
+    for (let i = 0; i < flags.length; i++) {
+        const f = flags[i];
+        const weightText = f.weight > 0 ? '+' + f.weight : '✓';
+        html += '<div class="flag ' + f.level + '" style="animation-delay:' + (i * 0.04) + 's">' +
+                '<span class="flag-icon">' + f.icon + '</span>' +
+                '<div class="flag-body">' +
+                '<div class="flag-text">' + f.text + '</div>' +
+                '<div class="flag-weight">' + weightText + '</div>' +
+                '</div></div>';
+    }
+    container.innerHTML = html;
+}
+
+// ============================================================
+// باز/بسته کردن
+// ============================================================
+
+function openResultPage() {
+    const page = document.getElementById('resultPage');
+    page.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    page.scrollTop = 0;
+}
+
+function closeResultPage() {
+    document.getElementById('resultPage').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// ============================================================
+// رویدادها
+// ============================================================
+
+document.getElementById('btnFa').addEventListener('click', () => {
+    lang = 'fa';
+    localStorage.setItem('fox-detector-lang', lang);
+    applyLanguage();
+});
+
+document.getElementById('btnEn').addEventListener('click', () => {
+    lang = 'en';
+    localStorage.setItem('fox-detector-lang', lang);
+    applyLanguage();
+});
+
+document.getElementById('analyzeBtn').addEventListener('click', analyze);
+document.getElementById('closeBtn').addEventListener('click', closeResultPage);
+
+document.getElementById('btnBack').addEventListener('click', () => {
+    closeResultPage();
+    setTimeout(() => document.getElementById('best').focus(), 100);
+});
+
+document.getElementById('btnAgain').addEventListener('click', () => {
+    ['best','eggs','score','games'].forEach(id => {
+        document.getElementById(id).value = '';
+    });
+    window._lastResult = null;
+    closeResultPage();
+    setTimeout(() => document.getElementById('best').focus(), 100);
+});
+
+document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') analyze();
+    });
+});
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('resultPage').classList.contains('active')) {
+        closeResultPage();
+    }
+});
+
+// ============================================================
+// راه‌اندازی
+// ============================================================
+
+// زبان اول
+applyLanguage();
+
+// 🔐 شروع با صفحه قفل
+initLockScreen();
+
+// ============================================================
+// 🔒 هر بار که اپ از حالت پس‌زمینه برمی‌گرده، دوباره قفل کن
+// ============================================================
+
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') {
+        // فقط اگه صفحه قفل پنهان بود و کاربر قبلاً احراز هویت کرده
+        const lock = document.getElementById('lockScreen');
+        if (lock && lock.classList.contains('hidden')) {
+            // دوباره نشون بده
+            lock.classList.remove('hidden');
+            lock.classList.remove('fade-out');
+
+            // ریست به حالت اولیه
+            setLockState(null);
+            document.getElementById('lockTitle').textContent = t('lockTitle');
+            document.getElementById('lockSubtitle').textContent = t('lockSubtitle');
+            document.getElementById('lockHint').textContent = t('lockHint');
+            setUnlockButton(t('unlockBtn'), t('unlockIcon'), false, false);
+            document.getElementById('btnUnlock').onclick = authenticateWithBiometric;
+
+            // شروع خودکار احراز هویت
+            setTimeout(() => {
+                authenticateWithBiometric();
+            }, 200);
+        }
+    }
+});
+</script>
+
+</body>
+  </html>
